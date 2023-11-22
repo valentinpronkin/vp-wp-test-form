@@ -2,7 +2,7 @@
 
     $( document ).ready( function() {
 
-			
+
 		$( '.vvp_form' ).on( 'click', '.vvp_btn_send', function( event ) {
 			
 			if (!validate($( '#vvp_email' ).val())) {
@@ -39,19 +39,13 @@
 
 				// enable button
 				$button.prop('disabled', false);
-				
-				//$button.remove();
-				//$('#vvp_btn_send').remove();
 
 			} );
 
 		} );
-		
-		
 
 
 		// Validate email
-
 		const validateEmail = (email) => {
 			return email.match(
 				/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -69,6 +63,7 @@
 				
 				// enable button
 				$( '#vvp_btn_send' ).prop('disabled', false);
+				
 				return true;
 			} else{
 				$result.text('"' + email + '" is not OK');
@@ -76,6 +71,7 @@
 				
 				// disable button
 				$( '#vvp_btn_send' ).prop('disabled', true);
+				
 				return false;
 			}
 		}

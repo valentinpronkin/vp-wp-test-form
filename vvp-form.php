@@ -35,12 +35,11 @@ class VVP_Form {
 		
 		// admin area
 		register_activation_hook(__FILE__, array( $this, 'activate'));
-		
+
 		add_action( 'admin_menu', array( $this, 'vvp_form_register_logs_page' ));
 		add_action( 'admin_menu', array( $this, 'vvp_form_setting_menu_page'), 25 );
 		add_action( 'admin_init', array( $this, 'vvp_form_fields') );
 	}
-
 
     public function activate() {
 		
@@ -49,19 +48,19 @@ class VVP_Form {
         $table = $wpdb->prefix . self::TBL_LOGS;
         $charset = $wpdb->get_charset_collate();
         $charset_collate = $wpdb->get_charset_collate();
-        $sql = "CREATE TABLE $table (
-			id mediumint(9) NOT NULL AUTO_INCREMENT,
-			time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			fname tinytext NOT NULL,
-			lname tinytext NOT NULL,
-			subject tinytext NOT NULL,
-			email tinytext NOT NULL,
-			message text NOT NULL,
-			PRIMARY KEY  (id)
-			) $charset_collate;";
+			$sql = "CREATE TABLE  IF NOT EXISTS $table (
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				fname tinytext NOT NULL,
+				lname tinytext NOT NULL,
+				subject tinytext NOT NULL,
+				email tinytext NOT NULL,
+				message text NOT NULL,
+				PRIMARY KEY  (id)
+				) $charset_collate;";
 
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+		dbDelta( $sql );
     }  
 
 	function scripts() {
@@ -106,7 +105,7 @@ class VVP_Form {
 		$lname = sanitize_text_field($data['vvp_lname']);
 		$email = sanitize_text_field($data['vvp_email']);
 		$subject = sanitize_text_field($data['vvp_subject']);
-		$message = htmlspecialchars($data['vvp_message']);
+		$message = stripcslashes(htmlspecialchars($data['vvp_message']));
 		
 
 		// backend validations
@@ -120,12 +119,20 @@ class VVP_Form {
 			wp_send_json_error('Invalid email format!');
 		}
 
-		if ( wp_mail( get_option( 'vvp_form_settings_email' ) , get_option( 'vvp_form_settings_subject' ), '<h2>'.$subject."</h2>\r\n".$message ) ) {
+
+		if ( wp_mail( get_option( 'vvp_form_settings_email' ) , get_option( 'vvp_form_settings_subject' ), '<h2>'.$subject."</h2>".htmlspecialchars_decode($message), 'Content-type: text/html' ) ) {
 			
 			// Add sent message to log (db table)
 			global $wpdb;  
 			$wpdb->insert($wpdb->prefix . self::TBL_LOGS, array('fname' => $fname, 'lname' => $lname,  'subject' => $subject, 'email' => $email, 'message' => $message)); 
 
+			// TODO: Create contact on HubSpot
+			$this->hubspot_create_contact(array(
+					'fname' => $fname,
+					'lname' => $lname,
+					'email' => $email
+				));
+			
 			wp_send_json_success('Sent successfully!');
 			
 		} else {
@@ -133,8 +140,39 @@ class VVP_Form {
 		}
 	}
 	
-	
-	
+	// TODO
+	function hubspot_create_contact($args) {
+		/*$arr = array(
+			'properties' => array(
+				array(
+					'property' => 'email',
+					'value' => $email
+				),
+				array(
+					'property' => 'firstname',
+					'value' => $fname
+				),
+				array(
+					'property' => 'lastname',
+					'value' => $lname
+				)
+			)
+		);
+		$post_json = json_encode($arr);
+		$hapikey = 'pat-na1-355ff026-a082-4d1c-a6c7-d4226eae8884';
+		$endpoint = 'https://api.hubapi.com/contacts/v1/contact?hapikey=' . $hapikey;
+		$ch = @curl_init();
+		@curl_setopt($ch, CURLOPT_POST, true);
+		@curl_setopt($ch, CURLOPT_POSTFIELDS, $post_json);
+		@curl_setopt($ch, CURLOPT_URL, $endpoint);
+		@curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+		@curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response = @curl_exec($ch);
+		$status_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$curl_errors = curl_error($ch);
+		@curl_close($ch);
+		$s = "curl Errors: " . $curl_errors."\nStatus code: " . $status_code."\nResponse: " . $response;*/
+	}
 	
 	
 	
@@ -148,10 +186,12 @@ class VVP_Form {
 	// Admin area code
 	//======================================================
 	function vvp_form_register_logs_page() {
+
 		add_options_page('VVP_Form Logs', 'VVP_Form Logs', 'manage_options', self::PLUGIN_NAME . '_log', array( $this, 'vvp_form_logs_page' ));
 	}
 	
 	function vvp_form_logs_page() {
+
 		global $wpdb;
 
 		$result = $wpdb->get_results ( "
@@ -176,11 +216,11 @@ class VVP_Form {
 	 
 		add_submenu_page(
 			'options-general.php',
-			'VVP_Form Settings', // тайтл страницы
-			'VVP_Form Settings', // текст ссылки в меню
-			'manage_options', // права пользователя, необходимые для доступа к странице
-			self::PLUGIN_NAME, // ярлык страницы
-			array( $this, 'vvp_form_page_callback') // функция, которая выводит содержимое страницы
+			'VVP_Form Settings',
+			'VVP_Form Settings',
+			'manage_options',
+			self::PLUGIN_NAME,
+			array( $this, 'vvp_form_page_callback')
 		);
 	}
 
@@ -190,9 +230,9 @@ class VVP_Form {
 			<h1>' . get_admin_page_title() . '</h1>
 			<form method="post" action="options.php">';
 
-		settings_fields( 'vvp_form_settings' ); // settings group id
-		do_settings_sections( self::PLUGIN_NAME ); // ярлык страницы, не более
-		submit_button(); // функция для вывода кнопки сохранения
+		settings_fields( 'vvp_form_settings' );
+		do_settings_sections( self::PLUGIN_NAME );
+		submit_button();
 
 		echo '</form></div>';
 
@@ -215,9 +255,9 @@ class VVP_Form {
 		// adding settings section
 		add_settings_section(
 			'slider_settings_section_id', // settings section id
-			'Settings', // заголовок (не обязательно)
-			'', // функция для вывода HTML секции (необязательно)
-			self::PLUGIN_NAME // ярлык страницы
+			'Settings',
+			'',
+			self::PLUGIN_NAME // slug
 		);
 	 
 		// addinf fields
@@ -225,7 +265,7 @@ class VVP_Form {
 			'vvp_form_settings_email',
 			'Email',
 			 array( $this, 'vvp_form_settings_field'), // field callback function
-			self::PLUGIN_NAME, // ярлык страницы
+			self::PLUGIN_NAME, // slug
 			'slider_settings_section_id', // settings section id
 			array(		// optional params
 				'label_for' => 'vvp_form_settings_email',
@@ -233,13 +273,14 @@ class VVP_Form {
 				'name' => 'vvp_form_settings_email', // 
 			)
 		);
+
 		add_settings_field(
 			'vvp_form_settings_subject',
 			'Subject',
-			 array( $this, 'vvp_form_settings_field'), // field callback function
-			self::PLUGIN_NAME, // ярлык страницы
-			'slider_settings_section_id', // settings section id
-			array(		// optional params
+			 array( $this, 'vvp_form_settings_field'),
+			self::PLUGIN_NAME,
+			'slider_settings_section_id',
+			array(
 				'label_for' => 'vvp_form_settings_subject',
 				'class' => 'tr-class',
 				'name' => 'vvp_form_settings_subject',
@@ -247,8 +288,8 @@ class VVP_Form {
 		);
 	}
 
-
 	function vvp_form_settings_field( $args ){
+
 		// get saved setting value from DB
 		$value = get_option( $args[ 'name' ] );
 	 
@@ -260,19 +301,6 @@ class VVP_Form {
 	 
 	}
 }
-
-
-
-
-
-
-
-
-// Send email messages with HTML formatting
-function vvp_form_set_email_content_type(){
-    return "text/html";
-}
-add_filter( 'wp_mail_content_type','vvp_form_set_email_content_type' );
 
 
 new VVP_Form();
