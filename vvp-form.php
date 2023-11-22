@@ -44,20 +44,20 @@ class VVP_Form {
     public function activate() {
 		
 		// creting DB table for sent messages logging
-        global $wpdb;
-        $table = $wpdb->prefix . self::TBL_LOGS;
-        $charset = $wpdb->get_charset_collate();
-        $charset_collate = $wpdb->get_charset_collate();
-			$sql = "CREATE TABLE  IF NOT EXISTS $table (
-				id mediumint(9) NOT NULL AUTO_INCREMENT,
-				time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				fname tinytext NOT NULL,
-				lname tinytext NOT NULL,
-				subject tinytext NOT NULL,
-				email tinytext NOT NULL,
-				message text NOT NULL,
-				PRIMARY KEY  (id)
-				) $charset_collate;";
+		global $wpdb;
+		$table = $wpdb->prefix . self::TBL_LOGS;
+		$charset = $wpdb->get_charset_collate();
+		$charset_collate = $wpdb->get_charset_collate();
+		$sql = "CREATE TABLE  IF NOT EXISTS $table (
+			id mediumint(9) NOT NULL AUTO_INCREMENT,
+			time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			fname tinytext NOT NULL,
+			lname tinytext NOT NULL,
+			subject tinytext NOT NULL,
+			email tinytext NOT NULL,
+			message text NOT NULL,
+			PRIMARY KEY  (id)
+			) $charset_collate;";
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 		dbDelta( $sql );
