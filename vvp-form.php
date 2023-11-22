@@ -119,70 +119,81 @@ class VVP_Form {
 			wp_send_json_error('Invalid email format!');
 		}
 
-
+		$add_response = array();
 		if ( wp_mail( get_option( 'vvp_form_settings_email' ) , get_option( 'vvp_form_settings_subject' ), '<h2>'.$subject."</h2>".htmlspecialchars_decode($message), 'Content-type: text/html' ) ) {
 			
-			// Add sent message to log (db table)
+			$add_response['email'] = "Email was sent successfully.";
+			
+			
+			// Add just sent message to log (db table)
 			global $wpdb;  
-			$wpdb->insert($wpdb->prefix . self::TBL_LOGS, array('fname' => $fname, 'lname' => $lname,  'subject' => $subject, 'email' => $email, 'message' => $message)); 
+			if ($wpdb->insert($wpdb->prefix . self::TBL_LOGS, array('fname' => $fname, 'lname' => $lname,  'subject' => $subject, 'email' => $email, 'message' => $message)) > 0) {
+				$add_response['db'] = "Email log added to database successfully.";
+				
+			} else {
+				$add_response['db'] = "Error while adding email log to database.";
+			}
 
-			// TODO: Create contact on HubSpot
-			$this->hubspot_create_contact(array(
+			// Create contact on HubSpot
+			if ($this->hubspot_create_contact(array(
 					'fname' => $fname,
 					'lname' => $lname,
 					'email' => $email
-				));
+				))) {
+					
+				$add_response['hubspot'] = "User added to HubSpot successfully.";
+			} else {
+				$add_response['hubspot'] = "Error while adding user to HubSpot (already exists?).";
+			}
+				
 			
-			wp_send_json_success('Sent successfully!');
+			wp_send_json_success('<p>' . implode('</p><p>', $add_response) . '</p>');
 			
 		} else {
-			wp_send_json_error('Something went wrong!');
+			$add_response['email'] = "Email was not sent successfully.";
+			$add_response['db'] = "Skipping adding email log to database.";
+			$add_response['hubspot'] = "Skipping adding user to HubSpot.";
+			
+			wp_send_json_error('Something went wrong!<p>' . implode('</p><p>', $add_response) . '</p>');
 		}
 	}
 	
-	// TODO
 	function hubspot_create_contact($args) {
-		/*$arr = array(
+		$arr = array(
 			'properties' => array(
 				array(
 					'property' => 'email',
-					'value' => $email
+					'value' => $args['email']
 				),
 				array(
 					'property' => 'firstname',
-					'value' => $fname
+					'value' => $args['fname']
 				),
 				array(
 					'property' => 'lastname',
-					'value' => $lname
+					'value' => $args['lname']
 				)
 			)
 		);
 		$post_json = json_encode($arr);
-		$hapikey = 'pat-na1-355ff026-a082-4d1c-a6c7-d4226eae8884';
-		$endpoint = 'https://api.hubapi.com/contacts/v1/contact?hapikey=' . $hapikey;
+		$hapikey = get_option( 'vvp_form_settings_hapikey' );
+		$endpoint = 'https://api.hubapi.com/contacts/v1/contact';
 		$ch = @curl_init();
 		@curl_setopt($ch, CURLOPT_POST, true);
 		@curl_setopt($ch, CURLOPT_POSTFIELDS, $post_json);
 		@curl_setopt($ch, CURLOPT_URL, $endpoint);
-		@curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+		@curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Authorization: Bearer '.$hapikey));
 		@curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		$response = @curl_exec($ch);
 		$status_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		$curl_errors = curl_error($ch);
 		@curl_close($ch);
-		$s = "curl Errors: " . $curl_errors."\nStatus code: " . $status_code."\nResponse: " . $response;*/
+		
+		return $status_code == 200;
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	// Admin area code
 	//======================================================
 	function vvp_form_register_logs_page() {
@@ -200,16 +211,26 @@ class VVP_Form {
 			WHERE 1
 			" );
 
-		$result_html = "";
-		foreach ( $result as $item )
-		{
-			$result_html .= "<tr/><td>$item->time</td><td>$item->fname</td><td>$item->lname</td><td>$item->email</td><td>$item->subject</td><td style=\"width: 400px;\">".mb_strimwidth((htmlspecialchars_decode($item->message)), 0, 500, " ...")."</td><tr/>";
-		}
+
 		echo '<h2>Sent email messages log</h2>';
-		echo '<table>';
-		echo '<tr><td>Timestamp</td><td>First name</td><td>Last name</td><td>Email</td><td>Subject</td><td>Message</td></tr>';
-		echo $result_html;
-		echo '</table>';
+		
+		if ($wpdb->num_rows > 0) {
+
+			$result_html = "";
+			foreach ( $result as $item )
+			{
+				$result_html .= "<tr/><td>$item->time</td><td>$item->fname</td><td>$item->lname</td><td>$item->email</td><td>$item->subject</td><td style=\"width: 400px;\">".mb_strimwidth((htmlspecialchars_decode($item->message)), 0, 500, " ...")."</td><tr/>";
+			}
+			echo '<table>';
+			echo '<tr><td>Timestamp</td><td>First name</td><td>Last name</td><td>Email</td><td>Subject</td><td>Message</td></tr>';
+			echo $result_html;
+			echo '</table>';
+
+		} else {
+
+			echo '<p>No log records yet.</p>';
+		}
+
 	}
 	
 	function vvp_form_setting_menu_page(){
@@ -247,8 +268,13 @@ class VVP_Form {
 			''
 		);
 		register_setting(
-			'vvp_form_settings', // settings group id
-			'vvp_form_settings_subject', // setting id
+			'vvp_form_settings',
+			'vvp_form_settings_subject',
+			''
+		);
+		register_setting(
+			'vvp_form_settings',
+			'vvp_form_settings_hapikey',
 			''
 		);
 	 
@@ -260,7 +286,7 @@ class VVP_Form {
 			self::PLUGIN_NAME // slug
 		);
 	 
-		// addinf fields
+		// adding fields
 		add_settings_field(
 			'vvp_form_settings_email',
 			'Email',
@@ -273,7 +299,6 @@ class VVP_Form {
 				'name' => 'vvp_form_settings_email', // 
 			)
 		);
-
 		add_settings_field(
 			'vvp_form_settings_subject',
 			'Subject',
@@ -284,6 +309,18 @@ class VVP_Form {
 				'label_for' => 'vvp_form_settings_subject',
 				'class' => 'tr-class',
 				'name' => 'vvp_form_settings_subject',
+			)
+		);
+		add_settings_field(
+			'vvp_form_settings_hapikey',
+			'HubSpot API key',
+			 array( $this, 'vvp_form_settings_field'),
+			self::PLUGIN_NAME,
+			'slider_settings_section_id',
+			array(
+				'label_for' => 'vvp_form_settings_hapikey',
+				'class' => 'tr-class',
+				'name' => 'vvp_form_settings_hapikey',
 			)
 		);
 	}
