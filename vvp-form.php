@@ -1,11 +1,13 @@
 <?php
 /*
-	Plugin Name: Demo contact form
+	Plugin Name: WordPress contact form
 	Plugin URI: 
-	Description: Demo contact form plugin description
+	Description: Spec project: basic contact form
+	Plugin description: 
 	Tags: form, contact, email, mail
-	Author: VVP
-	Author URI:
+	Author: Valentin Pronkin
+	Author URI: https://github.com/valentinpronkin/vp-wp-test-form
+	Text Domain: vvp-form
 	Contributors:
 	Requires at least:
 	Tested up to:
@@ -18,20 +20,13 @@ class VVP_Form {
 	private $option_name = 'vvp_form_setting';
 	
 	public function __construct() {
-	
-		add_filter( 'the_content', array( $this, 'vvp_form' ), 10, 1 );
+		add_shortcode('vvp-form', array( $this, 'vvp_form' ));
 
-		add_action( 'wp_enqueue_scripts', array( $this, 'scripts' ) );
-		
-		wp_enqueue_script( self::PLUGIN_NAME , plugin_dir_url( __FILE__ ) . 'js/script.js', array( 'jquery' ), null, true );
-		
-		wp_localize_script( self::PLUGIN_NAME, 'settings', array(
-				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-			)
-		);
 		add_action( 'wp_ajax_nopriv_send_form', array( $this, 'send_form' ) );
 		add_action( 'wp_ajax_send_form', array( $this, 'send_form' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'scripts' ) );		
 		
+		load_plugin_textdomain( self::PLUGIN_NAME, false, self::PLUGIN_NAME . '/languages' );
 		
 		// admin area
 		register_activation_hook(__FILE__, array( $this, 'activate'));
@@ -66,25 +61,31 @@ class VVP_Form {
 	function scripts() {
 
 		wp_enqueue_style( 'vvp-form', plugin_dir_url( __FILE__ ) . 'css/style.css' );
+		wp_enqueue_script( self::PLUGIN_NAME , plugin_dir_url( __FILE__ ) . 'js/script.js', array( 'jquery' ), null, true );
+		
+		wp_localize_script( self::PLUGIN_NAME, 'settings', array(
+				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+			)
+		);
 
 	}
 
 	public function vvp_form( $content ) {
 
 		$content .= '<div  class="vvp_form" id="vvp_form_1" method="POST" action="">
-						<label for="vvp_fname">First name:</label>
+						<label for="vvp_fname">' . __('First name', self::PLUGIN_NAME) . ':</label>
 						<input type="text" id="vvp_fname" placeholder="Enter your first name" required>
 
-						<label for="vvp_lname">Last name:</label>
+						<label for="vvp_lname">' . __('Last name', self::PLUGIN_NAME) . ':</label>
 						<input type="text" id="vvp_lname" placeholder="Enter your last name" required>
 
-						<label for="vvp_subject">Subject:</label>
+						<label for="vvp_subject">' . __('Subject', self::PLUGIN_NAME) . ':</label>
 						<input type="text" id="vvp_subject" placeholder="Enter subject" required>
 
-						<label for="vvp_message">Message:</label>
+						<label for="vvp_message">' . __('Message', self::PLUGIN_NAME) . ':</label>
 						<textarea id="vvp_message" placeholder="Your message"></textarea>
 
-						<label for="vvp_email">Email:</label>
+						<label for="vvp_email">' . __('Email', self::PLUGIN_NAME) . ':</label>
 						<input type="email" id="vvp_email" placeholder="Enter your email" required>
 						<p id="vvp_email_validation"></p>
 
@@ -110,13 +111,13 @@ class VVP_Form {
 
 		// backend validations
 		if (!preg_match("/^[a-zA-Z-' ]*$/", $fname)) {
-			wp_send_json_error('Only letters and white space allowed in first name');
+			wp_send_json_error(__('Only letters and white space allowed in first name', self::PLUGIN_NAME));
 		}
 		if (!preg_match("/^[a-zA-Z-' ]*$/", $lname)) {
-			wp_send_json_error('Only letters and white space allowed in first name');
+			wp_send_json_error(__('Only letters and white space allowed in last name', self::PLUGIN_NAME));
 		}
 		if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-			wp_send_json_error('Invalid email format!');
+			wp_send_json_error(__('Invalid email format!', self::PLUGIN_NAME));
 		}
 
 		$add_response = array();
@@ -128,10 +129,10 @@ class VVP_Form {
 			// Add just sent message to log (db table)
 			global $wpdb;  
 			if ($wpdb->insert($wpdb->prefix . self::TBL_LOGS, array('fname' => $fname, 'lname' => $lname,  'subject' => $subject, 'email' => $email, 'message' => $message)) > 0) {
-				$add_response['db'] = "Email log added to database successfully.";
+				$add_response['db'] = __('Email log added to database successfully.', self::PLUGIN_NAME);
 				
 			} else {
-				$add_response['db'] = "Error while adding email log to database.";
+				$add_response['db'] = __('Error while adding email log to database.', self::PLUGIN_NAME);
 			}
 
 			// Create contact on HubSpot
@@ -141,20 +142,20 @@ class VVP_Form {
 					'email' => $email
 				))) {
 					
-				$add_response['hubspot'] = "User added to HubSpot successfully.";
+				$add_response['hubspot'] = __('User added to HubSpot successfully.', self::PLUGIN_NAME);
 			} else {
-				$add_response['hubspot'] = "Error while adding user to HubSpot (already exists?).";
+				$add_response['hubspot'] = __('Error while adding user to HubSpot (already exists?).', self::PLUGIN_NAME);
 			}
 				
 			
 			wp_send_json_success('<p>' . implode('</p><p>', $add_response) . '</p>');
 			
 		} else {
-			$add_response['email'] = "Email was not sent successfully.";
-			$add_response['db'] = "Skipping adding email log to database.";
-			$add_response['hubspot'] = "Skipping adding user to HubSpot.";
+			$add_response['email'] = __('Email was not sent successfully.', self::PLUGIN_NAME);
+			$add_response['db'] = __('Skipping adding email log to database.', self::PLUGIN_NAME);
+			$add_response['hubspot'] = __('Skipping adding user to HubSpot.', self::PLUGIN_NAME);
 			
-			wp_send_json_error('Something went wrong!<p>' . implode('</p><p>', $add_response) . '</p>');
+			wp_send_json_error(__('Something went wrong!', self::PLUGIN_NAME) . '<p>' . implode('</p><p>', $add_response) . '</p>');
 		}
 	}
 	
@@ -212,7 +213,7 @@ class VVP_Form {
 			" );
 
 
-		echo '<h2>Sent email messages log</h2>';
+		echo '<h2>'. __('Sent email messages log', self::PLUGIN_NAME) . '</h2>';
 		
 		if ($wpdb->num_rows > 0) {
 
@@ -222,13 +223,13 @@ class VVP_Form {
 				$result_html .= "<tr/><td>$item->time</td><td>$item->fname</td><td>$item->lname</td><td>$item->email</td><td>$item->subject</td><td style=\"width: 400px;\">".mb_strimwidth((htmlspecialchars_decode($item->message)), 0, 500, " ...")."</td><tr/>";
 			}
 			echo '<table>';
-			echo '<tr><td>Timestamp</td><td>First name</td><td>Last name</td><td>Email</td><td>Subject</td><td>Message</td></tr>';
+			echo '<tr><td>'. __('Timestamp', self::PLUGIN_NAME) . '</td><td>'. __('First name', self::PLUGIN_NAME) . '</td><td>'. __('Last name', self::PLUGIN_NAME) . '</td><td>'. __('Email', self::PLUGIN_NAME) . '</td><td>'. __('Subject', self::PLUGIN_NAME) . '</td><td>'. __('Message', self::PLUGIN_NAME) . '</td></tr>';
 			echo $result_html;
 			echo '</table>';
 
 		} else {
 
-			echo '<p>No log records yet.</p>';
+			echo '<p>'. __('No log records yet.', self::PLUGIN_NAME) . '</p>';
 		}
 
 	}
@@ -237,7 +238,7 @@ class VVP_Form {
 	 
 		add_submenu_page(
 			'options-general.php',
-			'VVP_Form Settings',
+			__('VVP_Form Settings', self::PLUGIN_NAME),
 			'VVP_Form Settings',
 			'manage_options',
 			self::PLUGIN_NAME,
@@ -338,6 +339,5 @@ class VVP_Form {
 	 
 	}
 }
-
 
 new VVP_Form();

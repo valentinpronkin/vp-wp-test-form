@@ -1,0 +1,108 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WordPress contact form\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-03 22:51+0000\n"
+"PO-Revision-Date: 2024-03-04 03:21+0400\n"
+"Last-Translator: \n"
+"Language-Team: Spanish (Spain)\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 3.4.2\n"
+"X-Loco-Version: 2.6.6; wp-6.4.3\n"
+"X-Domain: vvp-form\n"
+
+#. Author URI of the plugin
+msgid "https://github.com/valentinpronkin/vp-wp-test-form"
+msgstr "https://github.com/valentinpronkin/vp-wp-test-form"
+
+#. Description of the plugin
+msgid "Spec project: basic contact form"
+msgstr "Spec project: basic contact form"
+
+#. Author of the plugin
+msgid "Valentin Pronkin"
+msgstr "Valentin Próñkin"
+
+#. Name of the plugin
+msgid "WordPress contact form"
+msgstr "WordPress contact form"
+
+#. Sent email messages log
+msgid "Sent email messages log"
+msgstr "Registro de mensajes de correo electrónico enviados"
+
+#. Timestamp
+msgid "Timestamp"
+msgstr "Marca de tiempo"
+
+#. First name
+msgid "First name"
+msgstr "Nombre"
+
+#. Last name
+msgid "Last name"
+msgstr "Apellido"
+
+#. Email
+msgid "Email"
+msgstr "Correo electrónico"
+
+#. Subject
+msgid "Subject"
+msgstr "Tema"
+
+#. Message
+msgid "Message"
+msgstr "Mensaje"
+
+#. Email log added to database successfully.
+msgid "Email log added to database successfully."
+msgstr "Registro de correo electrónico agregado a la base de datos exitosamente."
+
+#. Error while adding email log to database.
+msgid "Error while adding email log to database."
+msgstr "Error al agregar el registro de correo electrónico a la base de datos."
+
+#. User added to HubSpot successfully.
+msgid "User added to HubSpot successfully."
+msgstr "Usuario agregada a HubSpot exitosamente."
+
+#. Error while adding user to HubSpot (already exists?).
+msgid "Error while adding user to HubSpot (already exists?)."
+msgstr "Error al agregar un usuario a HubSpot (¿ya existe?)."
+
+#. Email was not sent successfully.
+msgid "Email was not sent successfully."
+msgstr "El correo electrónico no se envió correctamente."
+
+#. Skipping adding email log to database.
+msgid "Skipping adding email log to database."
+msgstr "Saltarse la adición del registro de correo electrónico a la base de datos."
+
+#. Skipping adding user to HubSpot.
+msgid "Saltarse la adición de usuario a HubSpot."
+msgstr "Mensaje"
+
+#. Something went wrong!
+msgid "Something went wrong!"
+msgstr "¡Algo salió mal!"
+
+#. Only letters and white space allowed in first name
+msgid "Only letters and white space allowed in first name"
+msgstr "Solo se permiten letras y espacios en blanco en el nombre"
+
+#. Only letters and white space allowed in last name
+msgid "Only letters and white space allowed in last name"
+msgstr "Solo se permiten letras y espacios en blanco en el apellido"
+
+#. Invalid email format!
+msgid "Invalid email format!"
+msgstr "¡Formato de correo inválido!"
+
+#. Email was sent successfully.
+msgid "Email was sent successfully."
+msgstr "El correo electrónico fue enviado exitosamente."
